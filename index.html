@@ -114,6 +114,20 @@
       min-height: 60vh;
       margin-bottom: 30px;
     }
+    #user-input-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: center;
+      margin: 8px 0;
+    }
+    #user-input-row input, #user-input-row select {
+      margin: 8px;
+      padding: 10px;
+      width: 220px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
     #answer-wrapper {
       display: flex;
       flex-direction: column;
@@ -141,7 +155,24 @@
 <body>
   <div id="user-info-container">
     <h2>3D Data Validation</h2>
-    <input type="text" id="user-name" placeholder="Name" style="margin:8px; padding:10px; width:220px; border-radius:5px; border:1px solid #ccc;">
+    <div id="user-input-row">
+      <input type="text" id="user-name" placeholder="Name">
+      <select id="dataset-select" style="margin:8px; padding:10px; width:220px; border-radius:5px; border:1px solid #ccc;">
+        <option value="">Select Videos</option>
+        <option value="./videos/paths_1-100.json">Videos 1-100</option>
+        <option value="./videos/paths_101-200.json">Videos 101-200</option>
+        <option value="./videos/paths_201-300.json">Videos 201-300</option>
+        <option value="./videos/paths_301-400.json">Videos 301-400</option>
+        <option value="./videos/paths_401-500.json">Videos 401-500</option>
+        <option value="./videos/paths_501-600.json">Videos 501-600</option>
+        <option value="./videos/paths_601-700.json">Videos 601-700</option>
+        <option value="./videos/paths_701-800.json">Videos 701-800</option>
+        <option value="./videos/paths_801-900.json">Videos 801-900</option>
+        <option value="./videos/paths_901-1000.json">Videos 901-1000</option>
+        <option value="./videos/paths_1001-1100.json">Videos 1001-1100</option>
+        <option value="./videos/paths_1101-1135.json">Videos 1101-1135</option>
+      </select>
+    </div>
     <button id="start-survey-button">Start</button>
   </div>
 
@@ -173,11 +204,12 @@
   </div>
 
   <script>
-    let videoIds = [];
     let totalRounds = 0;
     let currentRound = 0;
+    let videoIds = [];
     let responses = [];
     let userName = "";
+    let datasetFile = "";
 
     function isCurrentQuestionAnswered() {
       const textInput = document.getElementById('text-answer');
@@ -191,16 +223,17 @@
     }
 
     function saveCurrentResponse() {
-      const textAnswer = document.getElementById('text-answer').value.trim();
+      const answer = document.getElementById('text-answer').value.trim();
       const selectedLikert = document.querySelector('#answer-wrapper .option.selected');
       
       const rating = selectedLikert ? parseInt(selectedLikert.textContent) : null;
 
       responses[currentRound] = {
         name: userName,
+        dataset: datasetFile,
         round: currentRound + 1,
-        videoFile: videoIds[currentRound],
-        textAnswer,
+        file: videoIds[currentRound],
+        answer,
         rating
       };
     }
@@ -238,8 +271,8 @@
       textInput.placeholder = 'Type your answer here...';
       textInput.className = 'text-answer';
 
-      if (prevResponse && prevResponse.textAnswer) {
-        textInput.value = prevResponse.textAnswer;
+      if (prevResponse && prevResponse.answer) {
+        textInput.value = prevResponse.answer;
       }
 
       answerWrapper.appendChild(textInput);
@@ -310,7 +343,7 @@
       document.getElementById('final-page').style.display = 'flex';
 
       // Check if all questions are answered
-      const allAnswered = responses.filter(r => r && r.textAnswer && r.textAnswer.trim() !== '' && r.rating !== null).length === totalRounds;
+      const allAnswered = responses.filter(r => r && r.answer && r.answer.trim() !== '' && r.rating !== null).length === totalRounds;
 
       const finalHeading = document.getElementById('final-heading');
       const finalMessage = document.getElementById('final-message');
@@ -329,7 +362,7 @@
     }
 
     function submitToGoogleSheets(responses) {
-      fetch('https://script.google.com/macros/s/AKfycbyEBfySgZO0rU0hqAhXysAKNevsUfEUHg6Cz8ZQrzdha_MC0A8BJYjtHDjp80TB5oE0/exec', {
+      fetch('https://script.google.com/macros/s/AKfycbzX3rOqjFSQePttBfbAMn8ki8ixIfpQqpuL7K7157qsOeSpqo6pdn1VKU837CKFG5BUZQ/exec', {
         method: 'POST',
         mode: 'no-cors',
         headers: {
@@ -347,12 +380,13 @@
 
     // Start button handler
     document.getElementById('start-survey-button').addEventListener('click', async () => {
-      const name = document.getElementById('user-name').value.trim();
-      if (!name) return alert('Please enter your name');
+      userName = document.getElementById('user-name').value.trim();
+      if (!userName) return alert('Please enter your name');
 
-      userName = name;
+      datasetFile = document.getElementById('dataset-select').value;
+      if (!datasetFile) return alert('Please select a dataset');
 
-      const response = await fetch('./videos/videos.json?t=' + Date.now());
+      const response = await fetch(datasetFile);
       videoIds = await response.json();
 
       videoIds.sort(() => Math.random() - 0.5);
