@@ -352,7 +352,7 @@
 
       userName = name;
 
-      const response = await fetch('/videos/videos.json?t=' + Date.now());
+      const response = await fetch('./videos/videos.json?t=' + Date.now());
       videoIds = await response.json();
 
       videoIds.sort(() => Math.random() - 0.5);
